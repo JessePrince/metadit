@@ -9,8 +9,8 @@ accelerate launch \
         --optimizer adamw \
         --lr 5e-4 \
         --weight_decay 0.0 \
-        --data_path "/root/autodl-tmp/colornet/split_data/train_set.mat" \
-        --val_path /root/autodl-tmp/colornet/split_data/val_set.mat \
+        --data_path "split_data/train_set.mat" \
+        --val_path split_data/val_set.mat \
         --num_workers 2 \
         --use_checkpointing True \
         --save_dir "ckpt/clip-final-distributed-loss" \
