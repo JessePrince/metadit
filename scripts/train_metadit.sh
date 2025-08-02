@@ -1,5 +1,5 @@
 accelerate launch \
-    --num_processes 7 \
+    --num_processes 4 \
     --num_machines 1 \
     --mixed_precision no \
     train/train_metadit.py \
