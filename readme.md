@@ -2,9 +2,13 @@
 MetaDiT: Enabling Fine-grained Constraints in High-degree-of Freedom Metasurface Design
 </h1>
 
-<p align="center">
-| <a href="https://arxiv.org/abs/2508.05076"><b>Paper</b></a> | <a href="https://arxiv.org/abs/2508.05076"><b>🤗 Models </b></a> |
-</p>
+<div align="center">
+
+<a href="https://arxiv.org/abs/2508.05076"><img src="https://img.shields.io/static/v1?label=AAAI2026&message=Paper&color=red"></a>
+<a href="https://arxiv.org/abs/2508.05076"><img src="https://img.shields.io/static/v1?label=HuggingFace&message=Models&color=yellow"></a>
+[![GitHub Repo stars](https://img.shields.io/github/stars/JessePrince/metadit)](https://github.com/volcengine/verl/stargazers)
+
+</div>
 
 The official code implementation of paper **MetaDiT: Enabling Fine-grained Constraints in High-degree-of Freedom Metasurface Design** in AAAI 2026.
 
