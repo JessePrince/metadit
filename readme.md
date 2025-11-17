@@ -16,18 +16,18 @@ The official code implementation of paper **MetaDiT: Enabling Fine-grained Const
 - 📊 New metrics, to further evaluate the robustness of the model.
 - 🕹️ Coarse to fine condition injection in DiT and contrastively pre-trained spectrum encoder empowers strong performance of MetaDiT!
 
-# 🔉 News
+## 🔉 News
 - [2025.11.08] 🎉 Our paper is accepted by AAAI 2026, we are about to refactor this code base for better readability!
 - [2025.08.02] 🔥 We release the first version of our code! We will add more comments and optimize the code structure in the future!
 
-# Setups
+## 💿 Setups
 1. Install the required packages
    ```bash
    pip install -r requirements.txt
    ```
 2. Download dataset from https://github.com/SensongAn/Meta-atoms-data-sharing. You can split the dataset to train/val/test set by yourself or use our split version.
 
-# Training
+## 🎯 Training
 To train the surrogate model
 ```bash
 bash scripts/train_surrogate.sh
@@ -93,7 +93,7 @@ The arguments include
 - `--pretrain_encoder` path to the pretrained encoder
         
 
-# Inference
+## ⚙️ Inference
 To sample material from MetaDiT on the test set
 ```bash
 bash scripts/test_metadit.sh
@@ -146,10 +146,10 @@ The folder structure should be
     - xxx_rank1.json
     - ...
 
-# Accelerators
+## ⏲️ Accelerators
 We suggest at least 4 GPUs with more than 24GB memory, we used 4$\times$ Nvidia A100 80GB in this project.
 
-# 👀 Citation
+## 👀 Citation
 ```bibtex
 @article{li2025metadit,
   title={MetaDiT: Enabling Fine-grained Constraints in High-degree-of Freedom Metasurface Design},
