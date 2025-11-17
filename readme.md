@@ -1,18 +1,31 @@
-## MetaDiT: Enabling Fine-grained Constraints in High-degree-of Freedom Metasurface Design
+<h1 align="center">
+MetaDiT: Enabling Fine-grained Constraints in High-degree-of Freedom Metasurface Design
+</h1>
 
-Official code implementation of paper **MetaDiT: Enabling Fine-grained Constraints in High-degree-of Freedom Metasurface Design**.
+<p align="center">
+| <a href="https://arxiv.org/abs/2508.05076"><b>Paper</b></a> | <a href="https://arxiv.org/abs/2508.05076"><b>🤗 Models </b></a> |
+</p>
 
-### News
-[2025.08.02] 🔥 We release the first version of our code! We will add more comments and optimize the code structure in the future!
+The official code implementation of paper **MetaDiT: Enabling Fine-grained Constraints in High-degree-of Freedom Metasurface Design** in AAAI 2026.
 
-### Setups
+**Highlights**
+- 🌌 Design all parameters by encoding features into different channels, not just the shape!
+- 📈 High resolution spectrum constraints, never miss the important details!
+- 📊 New metrics, to further evaluate the robustness of the model.
+- 🕹️ Coarse to fine condition injection in DiT and contrastively pre-trained spectrum encoder empowers strong performance of MetaDiT!
+
+# 🔉 News
+- [2025.11.08] 🎉 Our paper is accepted by AAAI 2026, we are about to refactor this code base for better readability!
+- [2025.08.02] 🔥 We release the first version of our code! We will add more comments and optimize the code structure in the future!
+
+# Setups
 1. Install the required packages
    ```bash
    pip install -r requirements.txt
    ```
 2. Download dataset from https://github.com/SensongAn/Meta-atoms-data-sharing. You can split the dataset to train/val/test set by yourself or use our split version.
 
-### Training
+# Training
 To train the surrogate model
 ```bash
 bash scripts/train_surrogate.sh
@@ -78,7 +91,7 @@ The arguments include
 - `--pretrain_encoder` path to the pretrained encoder
         
 
-### Inference
+# Inference
 To sample material from MetaDiT on the test set
 ```bash
 bash scripts/test_metadit.sh
@@ -131,5 +144,15 @@ The folder structure should be
     - xxx_rank1.json
     - ...
 
-### Accelerators
+# Accelerators
 We suggest at least 4 GPUs with more than 24GB memory, we used 4$\times$ Nvidia A100 80GB in this project.
+
+# 👀 Citation
+```bibtex
+@article{li2025metadit,
+  title={MetaDiT: Enabling Fine-grained Constraints in High-degree-of Freedom Metasurface Design},
+  author={Li, Hao and Bogdanov, Andrey},
+  journal={arXiv preprint arXiv:2508.05076},
+  year={2025}
+}
+```
