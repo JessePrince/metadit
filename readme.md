@@ -8,6 +8,8 @@ MetaDiT: Enabling Fine-grained Constraints in High-degree-of Freedom Metasurface
 
 The official code implementation of paper **MetaDiT: Enabling Fine-grained Constraints in High-degree-of Freedom Metasurface Design** in AAAI 2026.
 
+![main](assets/main_diagram.png)
+
 **Highlights**
 - 🌌 Design all parameters by encoding features into different channels, not just the shape!
 - 📈 High resolution spectrum constraints, never miss the important details!
