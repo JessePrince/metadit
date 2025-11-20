@@ -5,7 +5,7 @@ MetaDiT: Enabling Fine-grained Constraints in High-degree-of Freedom Metasurface
 <div align="center">
 
 <a href="https://arxiv.org/abs/2508.05076"><img src="https://img.shields.io/static/v1?label=AAAI2026&message=Paper&color=red"></a>
-<a href="https://arxiv.org/abs/2508.05076"><img src="https://img.shields.io/static/v1?label=HuggingFace&message=Models&color=yellow"></a>
+<a href="https://huggingface.co/datasets/Hao-Li-131/MetaDiT-AAAI2026"><img src="https://img.shields.io/static/v1?label=HuggingFace&message=Models&color=yellow"></a>
 [![GitHub Repo stars](https://img.shields.io/github/stars/JessePrince/metadit)](https://github.com/JessePrince/metadit/stargazers)
 
 </div>
