@@ -6,8 +6,8 @@ for seed in "${seeds[@]}"; do
     python generate.py \
         --num_gpus 4 \
         --temp_dir cache/inference \
-        --data_path /root/autodl-tmp/metadit/sim_data/test_set.mat \
-        --model_path /root/autodl-tmp/metadit/ckpts/metadit-small.bin \
+        --data_path sim_data/test_set.mat \
+        --model_path ckpts/metadit-small.bin \
         --model_type metadit_s \
         --condition_channel 301 \
         --seed "$seed" \

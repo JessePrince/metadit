@@ -308,7 +308,7 @@ def main(args):
     parent = os.path.dirname(args.save_path)
     if not os.path.exists(parent):
         os.makedirs(parent)
-    save_json(all_results, args.save_path)
+    save_json(args.save_path, all_results)
     
     exit(0)
 

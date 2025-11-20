@@ -45,6 +45,15 @@ def accumulate_absolute_error(
         
     return torch.sum(torch.abs(y_pred - y_true)).item()
 
+def _flatten_list(lst):
+    result = []
+    for item in lst:
+        if isinstance(item, list):
+            result.extend(_flatten_list(item))
+        else:
+            result.append(item)
+    return result
+
 def _extract_seed_number(text):
     pattern = r'seed(\d+)'
     matches = re.findall(pattern, text, re.IGNORECASE)
@@ -58,10 +67,11 @@ def _extract_seed_number(text):
     
 def build_surrogate_model(model_path, device):
     model = surrogate_s3()
+    print(f"Loaded surrogate from {model_path}")
     ckpt = torch.load(model_path)
     model.load_state_dict(ckpt, strict=True)
     model.to(device)
-    
+    model.eval()
     return model
     
 def restore_structure(gen_structure: torch.Tensor) -> torch.Tensor:
@@ -89,7 +99,7 @@ def align_by_condition(data_dict: dict[str: list[dict]]):
     for seed_data in data_dict.values():
         for item in seed_data:
             # Convert numpy array to tuple for hashability
-            condition_tuple = tuple(item["condition"].flatten())
+            condition_tuple = tuple(_flatten_list(item["condition"]))
             all_conditions.add(condition_tuple)
     
     # Create alignment mapping
@@ -98,7 +108,7 @@ def align_by_condition(data_dict: dict[str: list[dict]]):
         # Create a mapping from condition to the corresponding dict
         condition_map = {}
         for item in seed_data:
-            condition_tuple = tuple(item["condition"].flatten())
+            condition_tuple = tuple(_flatten_list(item["condition"]))
             condition_map[condition_tuple] = item
         
         # Build aligned list for this seed
@@ -123,7 +133,7 @@ def validate_alignment(data_dict: dict[str: list[dict]]):
     
     # Compare conditions
     for items in zip(*lists):
-        conditions = [tuple(item["condition"].flatten()) for item in items]
+        conditions = [tuple(_flatten_list(item["condition"])) for item in items]
         if not all(cond == conditions[0] for cond in conditions[1:]):
             return False
     return True
@@ -148,7 +158,7 @@ def eval_loop(data: list[dict], model, pbar, device):
 
 def calculate_aaeandk(data_dict: dict[str: dict], k: int):
     # Extract the first k items and their AAE lists
-    aae_lists = [data['aae'] for data in list(data_dict.values())[:k]]
+    aae_lists = [data['aaes'] for data in list(data_dict.values())[:k]]
     
     if not aae_lists:
         return 0.0
@@ -162,30 +172,32 @@ def calculate_aaeandk(data_dict: dict[str: dict], k: int):
 
 def main(args):
     torch.set_grad_enabled(False)
-    torch.manual_seed(args.seed)
+    print(f"Evaluate for AAE&{args.k}")
     files = os.listdir(args.data_path)
     data_dict = {}
     for file in files:
+        print(f"Loading {file}")
         current_seed = _extract_seed_number(file)
         data_dict[f"seed{current_seed}"] = load_json(
             os.path.join(args.data_path, file)
         )
-        
-    max_k = max(args.k)
-    if len(data_dict.keys()) != max_k:
-        raise ValueError(
-            f"Required to calculate AAE&{max_k} but got only {len(data_dict.keys())} data"
-        )
+    if args.k is not None:
+        max_k = max(args.k)
+        if len(data_dict.keys()) != max_k:
+            raise ValueError(
+                f"Required to calculate AAE&{max_k} but got only {len(data_dict.keys())} data"
+            )
         
     assert "seed0" in data_dict, f"Seed 0 results not found! {data_dict.keys()}"
     total_data_length = sum([len(v) for v in data_dict.values()])
     logger.info(f"Data loaded, total length {total_data_length}")
     
-    logger.info(f"Validating data alignment...")
-    is_aligned = validate_alignment(data_dict)
-    if not is_aligned:
-        logger.warning("Data is not aligned, perform alignment automatically")
-        data_dict = align_by_condition(data_dict)
+    if len(data_dict) > 1:
+        logger.info(f"Validating data alignment...")
+        is_aligned = validate_alignment(data_dict)
+        if not is_aligned:
+            logger.warning("Data is not aligned, perform alignment automatically")
+            data_dict = align_by_condition(data_dict)
     
     model = build_surrogate_model(args.model_path, args.device)
     pbar = tqdm(total=total_data_length)
@@ -197,21 +209,27 @@ def main(args):
             maes, aaes = eval_loop(data, model, pbar, args.device)
             metric_dict[seed] = {"maes": maes, "aaes": aaes}
             
+    pbar.close()
     final_metric = {
-        "MAE": torch.mean(metric_dict["seed0"]["maes"]).item(),
-        "AAE": torch.mean(metric_dict["seed0"]["aaes"]).item()
+        "MAE": np.mean(metric_dict["seed0"]["maes"]).item(),
+        "AAE": np.mean(metric_dict["seed0"]["aaes"]).item()
     }
     
-    for k in args.k:
-        # For exact reproducibility, uncomment this, and comment the _data_dict=data_dict below
-        # if k == 2:
-        #     _data_dict = {"seed0": data_dict["seed0"], "seed7": data_dict["seed7"]}
-        # else:
-        #     _data_dict = data_dict
-        _data_dict = data_dict
-        final_metric[f"AAE&{k}"] = calculate_aaeandk(_data_dict, k)
+    if args.k is not None:
+        for k in args.k:
+            # For exact reproducibility, uncomment this, and comment the _data_dict=data_dict below
+            # if k == 2:
+            #     _metric_dict = {"seed0": metric_dict["seed0"], "seed7": metric_dict["seed7"]}
+            # else:
+            #     _metric_dict = metric_dict
+            _metric_dict = metric_dict
+            final_metric[f"AAE&{k}"] = calculate_aaeandk(_metric_dict, k)
         
-    print(final_metric)
+    print("------ Metrics ------")
+    for k, v in final_metric.items():
+        print(f"{k}: {v}")
+        
+    print("---------------------")
     
     if args.metric_save_path:
         parent = os.path.dirname(args.metric_save_path)
@@ -236,6 +254,13 @@ if __name__ == "__main__":
         "--metric_save_path",
         type=str,
         default=None
+    )
+    
+    # Model
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="cuda"
     )
     
     # Metric settings

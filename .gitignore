@@ -1,2 +1,6 @@
 __pycache__
 .ipynb_checkpoints
+.venv
+ckpts 
+sim_data
+cache
