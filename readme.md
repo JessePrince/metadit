@@ -25,11 +25,28 @@ The official code implementation of paper **MetaDiT: Enabling Fine-grained Const
 - [2025.08.02] 🔥 We release the first version of our code! We will add more comments and optimize the code structure in the future!
 
 ## 💿 Setups
-1. Install the required packages
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. Download dataset from https://github.com/SensongAn/Meta-atoms-data-sharing. You can split the dataset to train/val/test set by yourself or use our split version.
+First clone this repository
+```bash
+git clone https://github.com/JessePrince/metadit.git
+```
+
+`cd` to the directory
+```bash
+cd metadit
+```
+
+Then, install `uv`
+```bash
+pip install uv
+```
+
+and install dependencies
+```bash
+uv sync
+source .venv/bin/activate
+```
+
+Download dataset from https://github.com/SensongAn/Meta-atoms-data-sharing. You can split the dataset to train/val/test set by yourself or use our split version.
 
 ## 🎯 Training
 To train the surrogate model
