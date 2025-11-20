@@ -46,6 +46,18 @@ uv sync
 source .venv/bin/activate
 ```
 
+Install PyTorch based on your CUDA version
+```bash
+# Check your CUDA version
+nvcc -V
+
+# If the above command failed, use
+nvidia-smi
+
+# Install PyTorch according to your CUDA version (cu118, cu126, cu128)
+uv pip install torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cu126
+```
+
 Download dataset from https://github.com/SensongAn/Meta-atoms-data-sharing. You can split the dataset to train/val/test set by yourself or use our split version.
 
 ## 🎯 Training

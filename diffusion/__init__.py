@@ -7,8 +7,8 @@ import os
 import sys
 sys.path.append(os.getcwd())
 
-from framework.diffusion import gaussian_diffusion as gd
-from framework.diffusion.respace import SpacedDiffusion, space_timesteps
+from diffusion import gaussian_diffusion as gd
+from diffusion.respace import SpacedDiffusion, space_timesteps
 
 
 def create_diffusion(

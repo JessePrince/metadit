@@ -4,7 +4,7 @@ Sample new materials from diffusion model
 import torch
 import os
 from torchvision.utils import save_image
-from framework.diffusion import create_diffusion
+from diffusion import create_diffusion
 from model.dit import metadit_s
 import argparse
 from datapipe import FreeFormDataset
