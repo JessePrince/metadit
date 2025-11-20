@@ -48,6 +48,12 @@ source .venv/bin/activate
 
 Install PyTorch based on your CUDA version
 ```bash
+# First uninstall the torch from uv
+uv cache clean
+uv pip uninstall torch
+uv pip uninstall torchvision
+uv pip uninstall torchaudio
+
 # Check your CUDA version
 nvcc -V
 

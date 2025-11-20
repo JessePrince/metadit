@@ -328,12 +328,7 @@ if __name__ == "__main__":
         default="cache/inference"
     )
     
-    # Task information
-    parser.add_argument(
-        "--task_name",
-        type=str,
-        default="forward"
-    )
+    # data information
     parser.add_argument(
         "--data_path",
         type=str,
@@ -377,6 +372,11 @@ if __name__ == "__main__":
         "--batch_size",
         type=int,
         default=256
+    )
+    parser.add_argument(
+        "--time_steps",
+        type=int,
+        default=500
     )
     
     # Save
