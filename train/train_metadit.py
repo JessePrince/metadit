@@ -20,6 +20,7 @@ from utils import save_json
 from torch.utils.data import random_split
 from diffusion import create_diffusion
 import torch
+from model.dit import DIT_MODEL
 
 logger = WrappedLogger(__name__)
 rank = int(os.getenv("LOCAL_RANK", -1))
@@ -55,6 +56,7 @@ class TrainArgs:
 
 @dataclass
 class ModelArgs:
+    model_type: str = field(default="metadit_s")
     num_latent_size: int = field(default=1024)
     high_res_spec: bool = field(default=False)
     condition_channel: int = field(default=52)
@@ -87,8 +89,7 @@ def main(
         set_seed(0 + rank)
     
     diffusion = create_diffusion("", learn_sigma=False)
-    # model = metadit_s(diffusion=diffusion, condition_channel=model_args.condition_channel)
-    model = metadit_l(diffusion=diffusion, condition_channel=model_args.condition_channel)
+    model = DIT_MODEL[model_args.model_type](diffusion=diffusion, condition_channel=model_args.condition_channel)
     if model_args.pretrain_encoder is not None:
         ckpt = torch.load(model_args.pretrain_encoder)
         ckpt = {k.split("context_encoder.")[1]: v for k, v in ckpt.items()}

@@ -4,7 +4,7 @@ import numpy as np
 from torch import nn
 import torch.nn.functional as F
 
-from model.spec_encoder import SpectrumEncoderV2, SpectrumDecoder
+from model.spec_encoder import VanillaSpectrumEncoder
 from timm.models.vision_transformer import VisionTransformer
 import torch.distributed as dist
 
@@ -93,10 +93,6 @@ class ClipLoss(nn.Module):
     def forward(self, image_features, text_features, logit_scale, output_dict=False):
         device = image_features.device
         logits_per_image, logits_per_text = self.get_logits(image_features, text_features, logit_scale)
-        # print("logits per image", logits_per_image)
-        # print("logits per text", logits_per_text)
-        
-        # exit(0)
 
         labels = self.get_ground_truth(device, logits_per_image.shape[0])
 
@@ -111,14 +107,12 @@ class ClipLoss(nn.Module):
 class CLIPModel(nn.Module):
     def __init__(
         self,
-        ve_output_channel,
-        input_size
+        input_size,
+        world_size
     ):
         super().__init__()
-        self.context_encoder = SpectrumEncoderV2(vae_channel=ve_output_channel*2, num_heads=1)
-        self.context_decoder = SpectrumDecoder(num_blocks=[1, 1], num_heads=1, vae_channel=ve_output_channel)
+        self.spectrum_encoder = VanillaSpectrumEncoder()
         self.input_size = input_size
-        self.ve_output_channel = ve_output_channel
         
         # call forward_features only
         self.vit = VisionTransformer(img_size=input_size, patch_size=2, in_chans=3, embed_dim=384, depth=6, num_heads=6)
@@ -128,10 +122,10 @@ class CLIPModel(nn.Module):
         lshape = []
         self.logit_scale = nn.Parameter(torch.ones(lshape) * np.log(1 / 0.07))
         # self.logit_scale = nn.Parameter(torch.ones(lshape), requires_grad=False)
-        self.clip_loss = ClipLoss(rank=local_rank, world_size=4)
+        self.clip_loss = ClipLoss(rank=local_rank, world_size=world_size)
         
         self.img_proj = nn.Linear(384, 512, bias=False)
-        self.context_proj = nn.Linear(ve_output_channel*301, 512, bias=False)
+        self.context_proj = nn.Linear(256, 512, bias=False)
         
         self.apply(self._init_param)
         
@@ -143,29 +137,6 @@ class CLIPModel(nn.Module):
             nn.init.ones_(module.weight)
         if isinstance(module, (nn.Linear, nn.Conv2d)):
             nn.init.trunc_normal_(module.weight, std=0.02)
-            
-    def _reparameterize(self, mu: torch.Tensor, logvar: torch.Tensor) -> torch.Tensor:
-        """Reparameterize the mu and logvar from VAE to latent
-
-        Args:
-            mu (torch.Tensor): model predicted mu
-            logvar (torch.Tensor): model predicted logvar
-
-        Returns:
-            torch.Tensor: eps * std + mu
-        """
-        std = torch.exp(0.5 * logvar)
-        eps = torch.randn_like(std)
-        return eps * std + mu
-        
-    def _text_encoder(self, condition_context):
-        # transformer-like VAE encoder for text
-        output = self.context_encoder(condition_context)
-        mu, log_var = torch.chunk(output, 2, dim=-1)
-             
-        z = self._reparameterize(mu, log_var)
-
-        return [z, mu, log_var]
         
     def _img_clip(self, image_input):
         """Get image CLIP latent and logit scale"""
@@ -175,36 +146,18 @@ class CLIPModel(nn.Module):
         return image_latent, self.logit_scale
     
     def forward(self, inputs, condition, **kwargs):
-        x0, mu, log_var = self._text_encoder(condition)
-        recon = self.context_decoder(x0)
-        text_feat = self.context_proj(x0.flatten(1))
+        spectrum_feat = self.spectrum_encoder(condition)
+        text_feat = self.context_proj(spectrum_feat.mean(1))
         
-        recon_loss = F.l1_loss(recon, condition)
-        
-        recon_gt_clip, logit_scale = self._img_clip(inputs)
+        recon_gt_clip, _ = self._img_clip(inputs)
         recon_gt_clip = self.img_proj(recon_gt_clip)
         image_features = recon_gt_clip.float() / recon_gt_clip.float().norm(dim=-1, keepdim=True)
         text_features = text_feat.float() / text_feat.float().norm(dim=-1, keepdim=True)
-        clip_loss = self.clip_loss(image_features.float(), text_features.float(), logit_scale.float())
-        
-        kld_loss = -0.5 * torch.sum(1 + log_var - (0.3 * mu) ** 6 - log_var.exp(), dim = 1) # KL loss for text VAE
-        # kld_loss = -0.5 * torch.sum(1 + log_var - mu**2 - log_var.exp(), dim=1)
-        kld_loss_weight = 1e-3 # 0.0005
-        
-        # loss_mlp = recon_loss + clip_loss
-        # loss_mlp = clip_loss
-        loss_mlp = recon_loss + clip_loss + kld_loss * kld_loss_weight
-        # loss_mlp = recon_loss + kld_loss * kld_loss_weight
-        # loss_mlp = clip_loss + kld_loss * kld_loss_weight
+        clip_loss = self.clip_loss(image_features.float(), text_features.float(), self.logit_scale.float())
         
         output = {
-            "loss": loss_mlp.mean(),
-            "clip_loss": clip_loss.detach().mean(),
-            "recon_loss": recon_loss.detach().mean(),
-            "kld_loss": kld_loss.detach().mean(),
-            "kld_loss_weight": torch.tensor(kld_loss_weight, device=kld_loss.device),
-            "loss_clip_logit_scale": logit_scale,
+            "loss": clip_loss.mean(),
+            "loss_clip_logit_scale": self.logit_scale.clone().detach(),
         }
         
         return output
-    

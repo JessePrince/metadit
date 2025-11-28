@@ -21,6 +21,7 @@ The official code implementation of paper **MetaDiT: Enabling Fine-grained Const
 - 🕹️ Coarse to fine condition injection in DiT and contrastively pre-trained spectrum encoder empowers strong performance of MetaDiT!
 
 ## 🔉 News
+- [2025.11.28] 🚀 We're excited to release the training script! While we're still in the process of refactoring the codebase, the current version is functional and sufficient for model training. Please note that the code quality isn't optimal at this stage. We're actively working on improvements and will release a completely refactored, production-ready version in a new branch in the near future. Stay tuned for updates!
 - [2025.11.08] 🎉 Our paper is accepted by AAAI 2026, we are about to refactor this code base for better readability!
 - [2025.08.02] 🔥 We release the first version of our code! We will add more comments and optimize the code structure in the future!
 
@@ -120,8 +121,11 @@ python metric.py \
 ```
 
 ## 🚀 Training
-Coming soon!!
-
+To train the model, see `scripts/train_clip.sh`, `scripts/train_metadit.sh`, `scripts/train_surrogate.sh`. Run
+```bash
+bash scripts/train_xxx.sh
+```
+and the training will begin. The default hyper-parameter in the script is used in our paper.
 
 ## 👀 Citation
 ```bibtex

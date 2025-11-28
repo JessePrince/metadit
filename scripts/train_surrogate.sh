@@ -1,10 +1,10 @@
 accelerate launch \
-    --num_processes 4 \
+    --num_processes 8 \
     --num_machines 1 \
     --mixed_precision no \
-    train_surrogate.py \
+    train/train_surrogate.py \
         --num_epoch 500 \
-        --batch_size 512 \
+        --batch_size 256 \
         --warmup_ratio 0.002 \
         --optimizer adamw \
         --lr 1e-3 \

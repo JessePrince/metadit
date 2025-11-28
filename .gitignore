@@ -4,3 +4,5 @@ __pycache__
 ckpts 
 sim_data
 cache
+split_data
+uv.lock

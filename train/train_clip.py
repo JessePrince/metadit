@@ -18,9 +18,6 @@ from model.clip_model import CLIPModel
 from datapipe import FreeFormDataset
 from engine import Trainer
 from utils import save_json
-from torch.utils.data import random_split
-from framework.diffusion import create_diffusion
-from framework.flow.flow_matching import FlowMatching
 
 logger = WrappedLogger(__name__)
 rank = int(os.getenv("LOCAL_RANK", -1))
@@ -82,12 +79,13 @@ def main(
     train_args: TrainArgs,
     model_args: ModelArgs
 ):
+    world_size = int(os.environ.get("WORLD_SIZE", 1))
     torch.autograd.set_detect_anomaly(True)
-    logger.info(f"Training script for VAE", on_rank0=True)
+    logger.info(f"Training script for CLIP", on_rank0=True)
     if rank != -1:
         set_seed(0 + rank)
     
-    model = CLIPModel(ve_output_channel=8, input_size=32)
+    model = CLIPModel(input_size=32, world_size=world_size)
     logger.info(str(model), on_rank0=True)
     if rank in [0, -1]:
         if not os.path.exists(train_args.save_dir):
@@ -125,4 +123,3 @@ def main(
 if __name__ == "__main__":
     train_args, model_args = parse_args()
     main(train_args, model_args)
-    

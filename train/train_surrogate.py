@@ -18,7 +18,7 @@ from datapipe import SurrogateFreeFormDataset
 from engine import Trainer
 from utils import save_json
 from torch.utils.data import random_split
-from framework.diffusion import create_diffusion
+from diffusion import create_diffusion
 
 logger = WrappedLogger(__name__)
 rank = int(os.getenv("LOCAL_RANK", -1))

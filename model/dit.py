@@ -76,14 +76,7 @@ class LabelEmbedder(nn.Module):
     """
     def __init__(self, num_classes, hidden_size, dropout_prob):
         super().__init__()
-        # use_cfg_embedding = dropout_prob > 0
         self.encoder = VanillaSpectrumEncoder()
-        # self.encoder = nn.Linear(num_classes, hidden_size)
-        # self.proj = nn.Sequential(
-        #     nn.Linear(2, hidden_size),
-        #     nn.GELU(),
-        #     nn.Linear(hidden_size, hidden_size)
-        # )
         self.proj = nn.Linear(self.encoder.dim, hidden_size)
         self.num_classes = num_classes
         self.dropout_prob = dropout_prob
@@ -107,70 +100,13 @@ class LabelEmbedder(nn.Module):
         if (train and use_dropout) or (force_drop_ids is not None):
             labels = self.token_drop(labels, force_drop_ids)
         embed = self.proj(self.encoder(labels))  # B, 301, dim
-        # embed = self.proj(labels.permute(0, 2, 1))
-        # embed = self.encoder(labels)
-        
+
         return embed
 
 
 #################################################################################
 #                                 Core DiT Model                                #
 #################################################################################
-
-
-class CrossAttention(nn.Module):
-    def __init__(
-        self,
-        context_dim,
-        dim,
-        out_dim,
-        num_heads,
-        qk_norm
-    ):
-        super().__init__()
-        self.q_proj = nn.Linear(dim, dim)
-        self.kv_proj = nn.Linear(context_dim, dim*2)
-        self.o_proj = nn.Linear(dim, out_dim)
-        assert dim % num_heads == 0, f"dim {dim} not divisibile by heads {num_heads}"
-        self.head_dim = dim // num_heads
-        self.num_heads = num_heads
-        self.dim = dim
-        self.qk_norm = qk_norm
-        if qk_norm:
-            self.q_norm = nn.LayerNorm(self.head_dim)
-            self.k_norm = nn.LayerNorm(self.head_dim)
-        
-    def forward(self, query: torch.Tensor, kv: torch.Tensor):
-        B, N, D = query.shape
-        q = self.q_proj(query).reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        k, v = self.kv_proj(kv).reshape(B, kv.shape[1], 2, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
-        if self.qk_norm:
-            q = self.q_norm(q)
-            k = self.k_norm(k)
-        x = F.scaled_dot_product_attention(
-            q, k, v,
-            attn_mask=None,
-            dropout_p=0.
-        )
-        x = x.transpose(1, 2).reshape(B, N, self.dim)
-        x = self.o_proj(x)
-        
-        return x
-    
-class ConditionalFFN(nn.Module):
-    def __init__(self, hidden_size, intermediate_size, context_dim):
-        super().__init__()
-        self.proj1 = nn.Linear(hidden_size, intermediate_size)
-        self.proj2 = nn.Linear(context_dim, intermediate_size)
-        self.proj3 = nn.Linear(intermediate_size, hidden_size)
-        self.act = nn.SiLU()
-        
-    def forward(self, x, y):
-        x = self.act(self.proj1(x))
-        y = self.proj2(y)
-        out = self.proj3(x + y)
-        
-        return out
 
 class DiTBlock(nn.Module):
     """
@@ -195,16 +131,9 @@ class DiTBlock(nn.Module):
         
 
     def forward(self, x, c, y=None):
-        # shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp, shift_cond, scale_cond, gate_cond = self.adaLN_modulation(c).chunk(9, dim=1)
         shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = self.adaLN_modulation(c).chunk(6, dim=1)
-        # x = x + gate_msa.unsqueeze(1) * self.attn(modulate(self.norm1(x), shift_msa, scale_msa))
-        # x = x + self.attn2(x, y)
         fused_x = gate_msa.unsqueeze(1) * self.attn(modulate(self.norm1(torch.cat([x, y], dim=1)), shift_msa, scale_msa))
         x = x + fused_x[:, :x.shape[1]]
-        # x = x + gate_msa.unsqueeze(1) * self.attn(modulate(self.norm1(x), shift_msa, scale_msa))
-        # cond_x = gate_cond.unsqueeze(1) * self.attn2(modulate(self.norm3(torch.cat([x, y], dim=1)), shift_cond, scale_cond))
-        # cond_x = cond_x[:, :x.shape[1]]
-        # x = x + cond_x
         x = x + gate_mlp.unsqueeze(1) * self.mlp(modulate(self.norm2(x), shift_mlp, scale_mlp))
         
         return x
